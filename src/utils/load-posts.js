@@ -15,5 +15,4 @@ export const loadPosts = async () => {
   });
 
   return photosAndPosts;
-
 };
