@@ -1,70 +1,88 @@
 /* eslint-disable jsx-a11y/anchor-has-content */
 /* eslint-disable no-useless-constructor */
-import "./styles.css";
-import { Component } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { loadPosts } from "../../utils/load-posts";
-import { PostCard } from "../PostCard";
 import { Button } from "../Button";
+import { PostCard } from "../PostCard";
+import "./styles.css";
 
-class Home extends Component {
-  state = {
-    posts: [],
-    allPosts: [],
-    page: 0,
-    postsPerPage: 10,
-    searchValue:''
-  };
+export const Home = () =>{
 
-  // fetch aqui
-  componentDidMount() {
-    this.loadPosts();
-  }
+  const [posts, setPosts] = useState([])
+  const [allPosts, setAllPosts] = useState([])
+  const [page, setPage] = useState(0)
+  const [postsPerPage] = useState(5)
+  const [searchValue, setSearchValue] = useState("")
 
-  loadPosts = async () => {
-    const { page, postsPerPage } = this.state;
+
+  const filteredPosts = !!searchValue
+    ? posts.filter((post) => {
+      return post.title.toLowerCase().includes(searchValue.toLowerCase())
+    })
+    : posts;
+
+
+
+  // fetch aqui //função exclusiva 
+  // componentDidMount() {
+  //   this.loadPosts();
+  // }
+
+  const handleLoadPosts = useCallback(async (page, postsPerPage) => {
+
     const photosAndPosts = await loadPosts();
 
-    this.setState({
-      posts: photosAndPosts.slice(page, postsPerPage),
-      allPosts: photosAndPosts,
-    });
-  };
+    setPosts(photosAndPosts.slice(page, postsPerPage))
+    setAllPosts(photosAndPosts)
+    
+  }, []); 
 
-  loadMorePosts = () => {
-    const { page, postsPerPage, allPosts, posts } = this.state;
+
+  const loadMorePosts = () => {
+    // const { page, postsPerPage, allPosts, posts } = this.state;
 
     const nextPage = page + postsPerPage;
 
     const nextPosts = allPosts.slice(nextPage, nextPage + postsPerPage);
 
-    this.setState({ posts: [...posts, ...nextPosts], page: nextPage });
+    setPosts([...posts, ...nextPosts])
+    setPage(nextPage)
+
   };
+  
 
-  handeSearch = (e) =>{
+  const handeSearch = (e) =>{
     const { value } = e.target;
-    this.setState({searchValue: value})
-    // console.log(value);
+
+    setSearchValue(value)
+    
   }
 
-  render() {
-    const { posts, searchValue } = this.state;
-    const filteredPosts = !!searchValue
-    ? posts.filter((post) => {
-      return post.title.toLowerCase().includes(searchValue.toLowerCase())
-    })
-    : posts;
-    return (
-      <section className="container">
-        <input type="text" name="txtSearch" id="txtSearch" placeholder="Search..." onChange = {this.handeSearch} value={searchValue}/>
-        <div className="posts">
-          {filteredPosts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-        <Button text="Load more posts" action={this.loadMorePosts} />
-      </section>
-    );
-  }
+useEffect(() => {
+
+  handleLoadPosts(0, postsPerPage);
+},[handleLoadPosts, postsPerPage]);
+
+
+  return (
+    <section className="container">
+      <input type="text" 
+      name="txtSearch" 
+      id="txtSearch" 
+      placeholder="Search..." 
+      onChange = {handeSearch} 
+      value={searchValue}/>
+
+      
+      <div className="posts">
+        {filteredPosts.map((post) => (
+          <PostCard key={post.id} post={post} />
+        ))}
+      </div>
+      <Button text="Load more posts" action={loadMorePosts} />
+    </section>
+  );
+
 }
 
 export default Home;
